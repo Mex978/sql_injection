@@ -3,22 +3,16 @@ import sqlite3
 if __name__ == '__main__':
     print("Olá!")
     # conectando...
-    conn = sqlite3.connect('clientes.db')
+    conn = sqlite3.connect('usuarios.db')
     # definindo um cursor
     cursor = conn.cursor()
 
     # criando a tabela (schema)
     cursor.execute("""
-    CREATE TABLE clientes (
+    CREATE TABLE usuarios (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            idade INTEGER,
-            cpf     VARCHAR(11) NOT NULL,
-            email TEXT NOT NULL,
-            fone TEXT,
-            cidade TEXT,
-            uf VARCHAR(2) NOT NULL,
-            criado_em DATE NOT NULL
+            login TEXT NOT NULL,
+            senha TEXT NOT NULL
     );
     """)
 

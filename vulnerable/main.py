@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import npyscreen
 
 
 def clear():
@@ -21,31 +20,44 @@ def createDataBase():
                         senha TEXT NOT NULL
                 );
                 """)
-
-    print('Tabela criada com sucesso.')
     conn.close()
 
 
-def insertUser(cursor, username, password):
-    sql_command = f"""
-        INSERT INTO usuarios(login, senha) 
-        VALUES({username}, {password})"""
+def insertUser(username, password):
+    conn = sqlite3.connect('usuarios.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        f"""SELECT login FROM usuarios WHERE login=\"{username}\";""")
+    content = cursor.fetchall()
+    if len(content) > 0:
+        print("Usuario já registrado!")
+        return False
+    sql_command = f"""INSERT INTO usuarios(login, senha) VALUES(?,?);"""
     try:
-        cursor.execute(sql_command)
+        print(sql_command)
+        cursor.execute(sql_command, (username, password))
+        conn.commit()
+        conn.close()
         return True
     except Exception as e:
         return False
 
 
-def selectUser(cursor, username, password):
-    sql_command = f"""
-        SELECT * 
-        FROM usuarios 
-        WHERE login={username} AND senha={password}"""
+def selectUser(username, password):
+    conn = sqlite3.connect('usuarios.db')
+    cursor = conn.cursor()
+    sql_command = f"""SELECT * FROM usuarios WHERE login=\"{username}\" AND senha=\"{password}\";"""
     try:
         cursor.execute(sql_command)
+        content = cursor.fetchall()
+        if len(content) > 0:
+            return True
+        else:
+            return False
+        conn.close()
         return True
     except Exception as e:
+        print(e)
         return False
 
 
@@ -71,7 +83,7 @@ def userLogingFail():
 
 
 def userRegisterSuccess():
-    print("Usuário logado com sucesso!")
+    print("Usuário registrado com sucesso!")
 
 
 def userRegisterFail():
@@ -89,9 +101,9 @@ def menu():
 
 if __name__ == '__main__':
     if not dataBaseExists():
+        print("veio")
+        input()
         createDataBase()
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
 
     resp = -1
     while resp != "0":
@@ -99,21 +111,23 @@ if __name__ == '__main__':
         resp = menu()
         if resp == "1":
             user, passw = getUserCredential()
-            if selectUser(cursor, user, passw):
+            if selectUser(user, passw):
+                clear()
                 userLogingSuccess()
             else:
+                clear()
                 userLogingFail()
             break
             input()
         elif resp == "2":
             user, passw = getUserCredential()
-            if insertUser(cursor, user, passw):
+            if insertUser(user, passw):
+                clear()
                 userRegisterSuccess()
             else:
+                clear()
                 userRegisterFail()
             input()
         else:
             print("Opção inválida!")
             input()
-
-    conn.close()

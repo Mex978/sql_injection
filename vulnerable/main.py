@@ -14,12 +14,13 @@ def createDataBase():
     cursor = conn.cursor()
 
     cursor.execute("""
-                CREATE TABLE usuarios (
+                CREATE TABLE IF NOT EXISTS usuarios (
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         login TEXT NOT NULL,
                         senha TEXT NOT NULL
                 );
                 """)
+    conn.commit()
     conn.close()
 
 
@@ -27,38 +28,42 @@ def insertUser(username, password):
     conn = sqlite3.connect('usuarios.db')
     cursor = conn.cursor()
     cursor.execute(
-        f"""SELECT login FROM usuarios WHERE login=\"{username}\";""")
+        f"""SELECT login FROM usuarios WHERE login=\"{username}\";
+    """)
     content = cursor.fetchall()
     if len(content) > 0:
-        print("Usuario já registrado!")
-        return False
-    sql_command = f"""INSERT INTO usuarios(login, senha) VALUES(?,?);"""
+        raise Exception("Usuario já registrado!")
+    sql_command = f"""
+        INSERT INTO usuarios(login, senha) VALUES(\'{username}\', \'{password}\');
+    """
     try:
-        print(sql_command)
-        cursor.execute(sql_command, (username, password))
+        cursor.executescript(sql_command)
         conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        return False
+    except sqlite3.Error as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if conn:
+            conn.close()
 
 
 def selectUser(username, password):
     conn = sqlite3.connect('usuarios.db')
     cursor = conn.cursor()
-    sql_command = f"""SELECT * FROM usuarios WHERE login=\"{username}\" AND senha=\"{password}\";"""
+    sql_command = f"""
+    SELECT * FROM usuarios WHERE login=\"{username}\" AND senha=\"{password}\";
+    """
     try:
         cursor.execute(sql_command)
         content = cursor.fetchall()
-        if len(content) > 0:
-            return True
+        if len(content) <= 0:
+            raise Exception("Usuário e/ou Senha inválido(s)")
         else:
             return False
         conn.close()
-        return True
     except Exception as e:
-        print(e)
-        return False
+        raise e
 
 
 def dataBaseExists():
@@ -78,16 +83,8 @@ def userLogingSuccess():
     print("Usuário logado com sucesso!")
 
 
-def userLogingFail():
-    print("Usuário e/ou Senha inválido(s)")
-
-
 def userRegisterSuccess():
     print("Usuário registrado com sucesso!")
-
-
-def userRegisterFail():
-    print("Ocorreu algum erro no processo!")
 
 
 def menu():
@@ -103,7 +100,7 @@ if __name__ == '__main__':
     if not dataBaseExists():
         print("veio")
         input()
-        createDataBase()
+    createDataBase()
 
     resp = -1
     while resp != "0":
@@ -111,22 +108,24 @@ if __name__ == '__main__':
         resp = menu()
         if resp == "1":
             user, passw = getUserCredential()
-            if selectUser(user, passw):
+            try:
+                selectUser(user, passw)
                 clear()
                 userLogingSuccess()
-            else:
+                break
+            except Exception as e:
                 clear()
-                userLogingFail()
-            break
+                print(e)
             input()
         elif resp == "2":
             user, passw = getUserCredential()
-            if insertUser(user, passw):
+            try:
+                insertUser(user, passw)
                 clear()
                 userRegisterSuccess()
-            else:
+            except Exception as e:
                 clear()
-                userRegisterFail()
+                print(e)
             input()
         else:
             print("Opção inválida!")

@@ -1,7 +1,6 @@
 import sqlite3
 import os
 
-
 def clear():
     if os.name == 'nt':
         os.system('cls')
@@ -27,17 +26,19 @@ def createDataBase():
 def insertUser(username, password):
     conn = sqlite3.connect('usuarios.db')
     cursor = conn.cursor()
-    cursor.execute(
-        f"""SELECT login FROM usuarios WHERE login=\"{username}\";
-    """)
+
+    sql_command = f"SELECT login FROM usuarios WHERE login=?;"
+
+    cursor.execute(sql_command, (username,))
     content = cursor.fetchall()
+
     if len(content) > 0:
         raise Exception("Usuario já registrado!")
-    sql_command = f"""
-        INSERT INTO usuarios(login, senha) VALUES(\'{username}\', \'{password}\');
-    """
+    
+    sql_command = f"INSERT INTO usuarios(login, senha) VALUES(?,?);"
+
     try:
-        cursor.executescript(sql_command)
+        cursor.execute(sql_command, (username, password))
         conn.commit()
     except sqlite3.Error as e:
         if conn:
@@ -51,11 +52,11 @@ def insertUser(username, password):
 def selectUser(username, password):
     conn = sqlite3.connect('usuarios.db')
     cursor = conn.cursor()
-    sql_command = f"""
-    SELECT * FROM usuarios WHERE login=\"{username}\" AND senha=\"{password}\";
-    """
+    
+    sql_command = f"SELECT * FROM usuarios WHERE login=? AND senha=?;"
+
     try:
-        cursor.execute(sql_command)
+        cursor.execute(sql_command, (username, password))
         content = cursor.fetchall()
         if len(content) <= 0:
             raise Exception("Usuário e/ou Senha inválido(s)")
@@ -77,6 +78,15 @@ def getUserCredential():
     u = input("Username>> ")
     p = input("Password>> ")
     return u, p
+
+def validatesInput(user, passw):
+    if len(user) <= 0 or len(passw) <= 0:
+        return False
+    else:
+        if "\'" in user or "\"" in user or "\'" in passw or "\"" in passw:
+            return False
+        else:
+            return True
 
 
 def userLogingSuccess():
@@ -105,25 +115,37 @@ if __name__ == '__main__':
         resp = menu()
         if resp == "1":
             user, passw = getUserCredential()
-            try:
-                selectUser(user, passw)
+            if validatesInput(user, passw):
+                try:
+                    selectUser(user, passw)
+                    #clear()
+                    userLogingSuccess()
+                    break
+                except Exception as e:
+                    clear()
+                    print(e)
+                input()
+            else:
                 clear()
-                userLogingSuccess()
-                break
-            except Exception as e:
-                clear()
-                print(e)
-            input()
+                print('Entrada incorreta ou campo usuário e/ou senha não podem ser vazios!')
+                input()
         elif resp == "2":
             user, passw = getUserCredential()
-            try:
-                insertUser(user, passw)
+
+            if validatesInput(user, passw):
+                try:
+                    insertUser(user, passw)
+                    clear()
+                    userRegisterSuccess()
+                except Exception as e:
+                    #clear()
+                    print(e)
+                input()
+            else:
                 clear()
-                userRegisterSuccess()
-            except Exception as e:
-                clear()
-                print(e)
-            input()
+                print('Entrada incorreta ou campo usuário e/ou senha não podem ser vazios!')
+                input()
         else:
+            clear()
             print("Opção inválida!")
             input()

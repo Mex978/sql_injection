@@ -78,6 +78,12 @@ def getUserCredential():
     p = input("Password>> ")
     return u, p
 
+def validatesInput(user, passw):
+    if len(user) <= 0 or len(passw) <= 0:
+        return False
+    else:
+        return True
+
 
 def userLogingSuccess():
     print("Usuário logado com sucesso!")
@@ -105,25 +111,37 @@ if __name__ == '__main__':
         resp = menu()
         if resp == "1":
             user, passw = getUserCredential()
-            try:
-                selectUser(user, passw)
+            if validatesInput(user, passw):
+                try:
+                    selectUser(user, passw)
+                    clear()
+                    userLogingSuccess()
+                    break
+                except Exception as e:
+                    clear()
+                    print(e)
+                input()
+            else:
                 clear()
-                userLogingSuccess()
-                break
-            except Exception as e:
-                clear()
-                print(e)
-            input()
+                print('Campo usuário e/ou senha não podem ser vazios!')
+                input()
         elif resp == "2":
             user, passw = getUserCredential()
-            try:
-                insertUser(user, passw)
+
+            if validatesInput(user, passw):
+                try:
+                    insertUser(user, passw)
+                    clear()
+                    userRegisterSuccess()
+                except Exception as e:
+                    clear()
+                    print(e)
+                input()
+            else:
                 clear()
-                userRegisterSuccess()
-            except Exception as e:
-                clear()
-                print(e)
-            input()
+                print('Campo usuário e/ou senha não podem ser vazios!')
+                input()
         else:
+            clear()
             print("Opção inválida!")
             input()

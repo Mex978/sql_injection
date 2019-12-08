@@ -82,7 +82,10 @@ def validatesInput(user, passw):
     if len(user) <= 0 or len(passw) <= 0:
         return False
     else:
-        return True
+        if "\'" in user or "\"" in user or "\'" in passw or "\"" in passw:
+            return False
+        else:
+            return True
 
 
 def userLogingSuccess():
